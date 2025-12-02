@@ -1,7 +1,7 @@
 {
   "name": "HypertensionStageClassification-frontend",
   "private": true,
-  "homepage": "https://<YOUR-GITHUB-USERNAME>.github.io/<YOUR-REPOSITORY-NAME>",
+  "homepage": "https://moonvolk4.github.io/HypertensionStageClassification-frontend",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
