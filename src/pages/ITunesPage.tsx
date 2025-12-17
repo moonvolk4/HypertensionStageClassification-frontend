@@ -1,68 +1,52 @@
 import type { FC } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import "./ITunesPage.css";
 import { Col, Row, Spinner, Form, Button } from "react-bootstrap";
-import type { ITunesMusic } from "../modules/itunesApi";
-import { getStages } from "../modules/itunesApi";
 import InputField  from "../components/InputField";
 import { BreadCrumbs } from "../components/BreadCrumbs";
 import { ROUTES, ROUTE_LABELS } from "../../Routes";
 import { MusicCard } from "../components/MusicCard";
 import { useNavigate } from "react-router-dom";
-import { SONGS_MOCK } from "../modules/mock";
-import { useDispatch } from "react-redux";
-import { useStageFilters, setQueryAction, setSysFromAction, setSysToAction, setDiaFromAction, setDiaToAction } from "../slices/stageFilterSlice";
+import { useAppDispatch, useAppSelector } from "../storeHooks";
+import {
+  fetchServicesAsync,
+  setDiaFrom,
+  setDiaTo,
+  setSearchValue,
+  setSysFrom,
+  setSysTo,
+} from "../slices/servicesSlice";
+import { addServiceToDraftAsync } from "../slices/draftSlice";
 
 const ITunesPage: FC = () => {
-  const [loading, setLoading] = useState(false);
-  const [music, setMusic] = useState<ITunesMusic[]>([]);
-
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const filters = useStageFilters();
+  const dispatch = useAppDispatch();
 
-  const handleSearch = () => {
-    setLoading(true);
-    getStages({
-      query: filters.query,
-      sys_from: filters.sysFrom || undefined,
-      sys_to: filters.sysTo || undefined,
-      dia_from: filters.diaFrom || undefined,
-      dia_to: filters.diaTo || undefined,
-    })
-      .then((response) => {
-        setMusic(response.results);
-        setLoading(false);
-      })
-      .catch(() => { // В случае ошибки используем mock данные, фильтруем по имени
-        setMusic(
-          SONGS_MOCK.results.filter((item) =>
-            item.collectionCensoredName
-              .toLocaleLowerCase()
-              .startsWith(filters.query.toLocaleLowerCase())
-          )
-        );
-        setLoading(false);
-      });
-  };
+  const { searchValue, services, loading, sysFrom, sysTo, diaFrom, diaTo } = useAppSelector(
+    (state) => state.services,
+  );
+  const isAuthenticated = useAppSelector((state) => state.user.isAuthenticated);
 
   // Auto-load initial services list on mount
   useEffect(() => {
-    handleSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    dispatch(fetchServicesAsync());
+  }, [dispatch]);
 
     function handleCardClick(collectionId: number): void {
         navigate(`${ROUTES.ALBUMS}/${collectionId}`);
     }
+
+  const handleSearch = () => {
+    dispatch(fetchServicesAsync());
+  };
 
   return (
     <div className="container-fluid">
       <BreadCrumbs crumbs={[{ label: ROUTE_LABELS.ALBUMS }]} />
       
       <InputField
-        value={filters.query}
-        setValue={(value) => dispatch(setQueryAction(value))}
+        value={searchValue}
+        setValue={(value) => dispatch(setSearchValue(value))}
         loading={loading}
         onSubmit={handleSearch}
         placeholder="Название стадии"
@@ -77,8 +61,8 @@ const ITunesPage: FC = () => {
               <Form.Control
                 type="number"
                 min="0"
-                value={filters.sysFrom || ""}
-                onChange={(e) => dispatch(setSysFromAction(Number(e.target.value) || 0))}
+                value={sysFrom || ""}
+                onChange={(e) => dispatch(setSysFrom(Number(e.target.value) || 0))}
                 placeholder="напр. 120"
               />
             </Form.Group>
@@ -89,8 +73,8 @@ const ITunesPage: FC = () => {
               <Form.Control
                 type="number"
                 min="0"
-                value={filters.sysTo || ""}
-                onChange={(e) => dispatch(setSysToAction(Number(e.target.value) || 0))}
+                value={sysTo || ""}
+                onChange={(e) => dispatch(setSysTo(Number(e.target.value) || 0))}
                 placeholder="напр. 140"
               />
             </Form.Group>
@@ -101,8 +85,8 @@ const ITunesPage: FC = () => {
               <Form.Control
                 type="number"
                 min="0"
-                value={filters.diaFrom || ""}
-                onChange={(e) => dispatch(setDiaFromAction(Number(e.target.value) || 0))}
+                value={diaFrom || ""}
+                onChange={(e) => dispatch(setDiaFrom(Number(e.target.value) || 0))}
                 placeholder="напр. 80"
               />
             </Form.Group>
@@ -113,8 +97,8 @@ const ITunesPage: FC = () => {
               <Form.Control
                 type="number"
                 min="0"
-                value={filters.diaTo || ""}
-                onChange={(e) => dispatch(setDiaToAction(Number(e.target.value) || 0))}
+                value={diaTo || ""}
+                onChange={(e) => dispatch(setDiaTo(Number(e.target.value) || 0))}
                 placeholder="напр. 90"
               />
             </Form.Group>
@@ -133,16 +117,21 @@ const ITunesPage: FC = () => {
         </div>
       )}
       {!loading &&
-        (!music.length /* Проверка на существование данных */ ? (
+        (!services.length /* Проверка на существование данных */ ? (
           <div>
             <h1>К сожалению, пока ничего не найдено :(</h1>
           </div>
         ) : (
           <Row xs={1} sm={2} md={3} lg={4} xl={4} xxl={5} className="g-4">
-            {music.map((item, index) => (
+            {services.map((item, index) => (
               <Col key={index}>
                 <MusicCard
                   imageClickHandler={() => handleCardClick(item.collectionId)}
+                  onAdd={
+                    isAuthenticated
+                      ? () => dispatch(addServiceToDraftAsync(item))
+                      : undefined
+                  }
                   {...item}
                 />
               </Col>

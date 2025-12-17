@@ -5,7 +5,7 @@ import { BreadCrumbs } from "../components/BreadCrumbs";
 import { ROUTES, ROUTE_LABELS } from "../../Routes";
 import { useParams } from "react-router-dom";
 import type { ITunesMusic } from "../modules/itunesApi";
-import { getAlbumById, getStageByIdRaw } from "../modules/itunesApi";
+import { getStageByIdRaw, stageToITunes } from "../modules/itunesApi";
 import { Col, Row, Spinner, Image } from "react-bootstrap";
 import { SONGS_MOCK } from "../modules/mock";
 import defaultimage from "../assets/header_icon.png";
@@ -18,20 +18,34 @@ export const AlbumPage: FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getAlbumById(id), getStageByIdRaw(id)])
-      .then(([response, rawStage]) => {
-        setPageDdata(response.results[0]);
+    getStageByIdRaw(id)
+      .then((rawStage) => {
         setRaw(rawStage);
+        setPageDdata(stageToITunes(rawStage));
       })
-      .catch(
-        () =>
-          setPageDdata(
-            SONGS_MOCK.results.find(
-              (album) => String(album.collectionId) == id
-            )
-          ) /* В случае ошибки используем мок данные, фильтруем по ид */
+      .catch(() =>
+        setPageDdata(
+          SONGS_MOCK.results.find((album) => String(album.collectionId) == id)
+        ),
       );
   }, [id]);
+
+  const getAny = (obj: any, keys: string[]) => {
+    for (const k of keys) {
+      const v = obj?.[k];
+      if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+    }
+    return undefined;
+  };
+
+  const description = getAny(raw, ['Description', 'description', 'desc', 'details']);
+  const pressure = getAny(raw, ['Pressure', 'pressure']);
+  const riskName = getAny(raw, ['RiskName', 'risk_name', 'riskName', 'RiskClass', 'riskClass']);
+  const code = getAny(raw, ['Code', 'code']);
+  const sysFrom = getAny(raw, ['SysFrom', 'sys_from', 'sysFrom']);
+  const sysTo = getAny(raw, ['SysTo', 'sys_to', 'sysTo']);
+  const diaFrom = getAny(raw, ['DiaFrom', 'dia_from', 'diaFrom']);
+  const diaTo = getAny(raw, ['DiaTo', 'dia_to', 'diaTo']);
 
 
   return (
@@ -49,19 +63,30 @@ export const AlbumPage: FC = () => {
               <p>
                 Название: <strong>{pageData.collectionCensoredName}</strong>
               </p>
-              {raw?.Description && (
+              {description && (
                 <p>
-                  Описание: <strong>{raw.Description}</strong>
+                  Описание: <strong>{String(description)}</strong>
                 </p>
               )}
-              {raw?.Pressure && (
+              {pressure && (
                 <p>
-                  Давление: <strong>{raw.Pressure}</strong>
+                  Давление: <strong>{String(pressure)}</strong>
                 </p>
               )}
-              {raw?.RiskName && (
+              {riskName && (
                 <p>
-                  Риск: <strong>{raw.RiskName}</strong>
+                  Риск: <strong>{String(riskName)}</strong>
+                </p>
+              )}
+              {code && (
+                <p>
+                  Код: <strong>{String(code)}</strong>
+                </p>
+              )}
+              {(sysFrom || sysTo || diaFrom || diaTo) && (
+                <p>
+                  Диапазон: <strong>{String(sysFrom ?? '—')}–{String(sysTo ?? '—')}</strong>{' '}
+                  / <strong>{String(diaFrom ?? '—')}–{String(diaTo ?? '—')}</strong>
                 </p>
               )}
             </Col>

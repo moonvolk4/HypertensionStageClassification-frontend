@@ -1,3 +1,5 @@
+import { API_BASE } from '../../target_config'
+
 export interface ITunesMusic {
   wrapperType: string;
   artworkUrl100: string;
@@ -15,8 +17,6 @@ export interface ITunesResult {
   resultCount: number;
   results: ITunesMusic[];
 }
-
-const API_BASE = (import.meta.env.VITE_API_BASE as string) || '';
 // Sensible defaults for dev if .env not provided
 const MINIO_PUBLIC_BASE = (import.meta.env.VITE_MINIO_PUBLIC_BASE as string) || 'http://localhost:9000';
 const MINIO_BUCKET = (import.meta.env.VITE_MINIO_BUCKET as string) || 'images';

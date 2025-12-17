@@ -10,6 +10,7 @@ interface ICardProps {
   collectionCensoredName: string;
   trackViewUrl: string;
   imageClickHandler: () => void;
+  onAdd?: () => void;
   pressure?: string;
   riskName?: string;
   code?: string;
@@ -22,6 +23,7 @@ export const MusicCard: FC<ICardProps> = ({
   collectionCensoredName,
   trackViewUrl,
   imageClickHandler,
+  onAdd,
   pressure,
   riskName,
   code,
@@ -66,6 +68,12 @@ export const MusicCard: FC<ICardProps> = ({
         ) : (
           <Button className="cardButton" variant="secondary" disabled>
             Недоступно
+          </Button>
+        )}
+
+        {onAdd && (
+          <Button className="cardButton mt-2" variant="success" onClick={onAdd}>
+            Добавить
           </Button>
         )}
       </Card.Body>
